@@ -63,8 +63,19 @@ endif
 # ProjectX Specific
 #
 
-# some systems use lua5.1
-LUA=$(shell pkg-config lua && echo lua || echo lua5.1)
+# prefer lua5.1 when available, otherwise fall back to default lua (override with LUA=<pkg-config-name>)
+HAVE_LUA51:=$(shell pkg-config --exists lua5.1 2>/dev/null && echo yes)
+HAVE_LUA:=$(shell pkg-config --exists lua 2>/dev/null && echo yes)
+LUA?=$(if $(HAVE_LUA51),lua5.1,$(if $(HAVE_LUA),lua))
+ifeq ($(strip $(LUA)),)
+  $(error Lua pkg-config missing (tried lua5.1 and lua). Override with 'make LUA=<name>' if installed elsewhere)
+endif
+HAVE_LIBENET:=$(shell pkg-config --exists libenet 2>/dev/null && echo yes)
+HAVE_ENET:=$(shell pkg-config --exists enet 2>/dev/null && echo yes)
+ENET_PKG?=$(if $(HAVE_LIBENET),libenet,$(if $(HAVE_ENET),enet))
+ifeq ($(strip $(ENET_PKG)),)
+  $(error ENet dev package missing (pkg-config name libenet or enet). Override with 'make ENET_PKG=<name>' if installed elsewhere)
+endif
 MACOSX=$(shell uname -a | grep -qi darwin && echo 1 || echo 0)
 
 # which version of sdl do you want to ask pkgconfig for ?
@@ -82,7 +93,7 @@ $(if $(shell test "$(GL)" -ge 3 -a "$(SDL)" -lt 2 && echo fail), \
      $(error "GL >= 3 only supported with SDL >= 2"))
 
 # library headers
-CFLAGS+= `pkg-config --cflags $(SDL_) $(LUA) $(LUA)-socket libenet libpng zlib openal`
+CFLAGS+= `pkg-config --cflags $(SDL_) $(LUA) $(LUA)-socket $(ENET_PKG) libpng zlib openal`
 ifeq ($(MACOSX),1)
   CFLAGS += -DMACOSX
 endif
@@ -95,7 +106,7 @@ ifeq ($(STATIC),1)
   LIB+= -Wl,-dn
   PKG_CFG_OPTS= --static
 endif
-LIB+= `pkg-config $(PKG_CFG_OPTS) --libs $(LUA) $(LUA)-socket libenet libpng zlib openal` -lm
+LIB+= `pkg-config $(PKG_CFG_OPTS) --libs $(LUA) $(LUA)-socket $(ENET_PKG) libpng zlib openal` -lm
 ifeq ($(STATIC),1)
   LIB+= -Wl,-dy
 endif
@@ -192,6 +203,7 @@ check:
 	@echo "RENDER_DISABLED = $(RENDER_DISABLED)"
 	@echo "INPUT_DISABLED = $(INPUT_DISABLED)"
 	@echo "LUA = $(LUA)"
+	@echo "ENET_PKG = $(ENET_PKG)"
 	@echo "SDL = $(SDL)"
 	@echo "SDL_ = $(SDL_)"
 	@echo
