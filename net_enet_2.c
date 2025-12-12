@@ -761,7 +761,7 @@ static void new_connection( ENetPeer * peer )
 
 static void lost_connection( ENetPeer * peer, enet_uint32 data )
 {
-	char* reason = &data;
+	unsigned char* reason = (unsigned char*) &data;
 	network_peer_data_t * peer_data = peer->data;
 
 	// print debug info
@@ -986,7 +986,7 @@ static void peer_connected_to( ENetPeer * peer, peer_id_t id )
 		DebugPrintf("network security: failed to find joiner by id %d\n", id);
 		return;
 	}
-	if( joiner->state == PLAYING )
+	if( joiner_data->state == PLAYING )
 	{
 		network_peer_data_t * peer_data = peer->data;
 		DebugPrintf("network security: player %d @ %s sent us a succesfully-connected-to-new-player message for player %d but player %d is already in the game!\n",
@@ -1480,6 +1480,8 @@ void network_pump()
 	{
 		switch (event.type)
 		{
+		case ENET_EVENT_TYPE_NONE:
+			break;
 		case ENET_EVENT_TYPE_CONNECT:
 			new_connection( event.peer );
 			break;

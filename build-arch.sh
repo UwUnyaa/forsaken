@@ -6,7 +6,7 @@ set -euo pipefail
 
 ROOT="$(pwd)"
 
-pacman -Syu --noconfirm base-devel git lua51 lua51-socket pkgconf cmake
+pacman -Syu --noconfirm base-devel git lua51 lua51-socket pkgconf cmake mesa glu
 cmake --version
 
 if [[ ! -d "${ROOT}/libs" ]]; then
