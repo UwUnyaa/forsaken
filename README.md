@@ -12,7 +12,9 @@ Use an Arch container to keep dependencies isolated. With these changes, a clean
 docker run --rm -v "$(pwd)":/work -w /work archlinux:latest bash -lc "\
   pacman -Syu --noconfirm base-devel git lua51 lua51-socket pkgconf cmake && \
   git clone https://github.com/ForsakenX/forsaken-libs.git libs && \
-  cd libs/src && ./build.sh && cd /work && \
+  cd libs/src && \
+  sed -i 's/cmake_minimum_required(VERSION 2\\.8/cmake_minimum_required(VERSION 3.5/' openal-soft-1.14/CMakeLists.txt && \
+  ./build.sh && cd /work && \
   export PKG_CONFIG_PATH=/work/libs/lib/pkgconfig:\$PKG_CONFIG_PATH && \
   make LUA=lua5.1"
 ```
