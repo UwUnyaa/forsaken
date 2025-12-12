@@ -7,6 +7,7 @@ set -euo pipefail
 ROOT="$(pwd)"
 
 pacman -Syu --noconfirm base-devel git lua51 lua51-socket pkgconf cmake
+cmake --version
 
 if [[ ! -d "${ROOT}/libs" ]]; then
   git clone https://github.com/ForsakenX/forsaken-libs.git "${ROOT}/libs"
@@ -19,6 +20,12 @@ cd "${ROOT}/libs/src"
 # Patch OpenAL for newer CMake.
 sed -i 's/cmake_minimum_required(VERSION 2\.8/cmake_minimum_required(VERSION 3.5/' openal-soft-1.14/CMakeLists.txt
 sed -i 's@cmake -DEXAMPLES=OFF -DCMAKE_INSTALL_PREFIX= ../@cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DEXAMPLES=OFF -DCMAKE_INSTALL_PREFIX= ../@' build.sh
+(
+  cd openal-soft-1.14
+  mkdir -p build
+  cd build
+  cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DEXAMPLES=OFF -DCMAKE_INSTALL_PREFIX= ../ || true
+)
 
 # Rebuild dependencies.
 ./build.sh
