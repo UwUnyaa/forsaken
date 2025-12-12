@@ -9,16 +9,7 @@ Check out the [Wiki](https://github.com/ForsakenX/forsaken/wiki) for more inform
 Use an Arch container to keep dependencies isolated. With these changes, a clean build should work when the SDL/Lua 5.1/OpenAL/ENet toolchain is available. Follow the `forsaken-libs` README recommendation to build dependencies locally and point pkg-config at them:
 
 ```bash
-docker run --rm -v "$(pwd)":/work -w /work archlinux:latest bash -lc "\
-  pacman -Syu --noconfirm base-devel git lua51 lua51-socket pkgconf cmake && \
-  git clone https://github.com/ForsakenX/forsaken-libs.git libs && \
-  cd libs/src && \
-  ./build.sh || true && \
-  sed -i 's/cmake_minimum_required(VERSION 2\\.8/cmake_minimum_required(VERSION 3.5/' openal-soft-1.14/CMakeLists.txt && \
-  sed -i 's@cmake -DEXAMPLES=OFF -DCMAKE_INSTALL_PREFIX= ../@cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DEXAMPLES=OFF -DCMAKE_INSTALL_PREFIX= ../@' build.sh && \
-  ./build.sh && cd /work && \
-  export PKG_CONFIG_PATH=/work/libs/lib/pkgconfig:\$PKG_CONFIG_PATH && \
-  make LUA=lua5.1"
+docker run --rm -v "$(pwd)":/work -w /work archlinux:latest bash -lc "./build-arch.sh"
 ```
 
 The Makefile now auto-detects the `libenet` vs `enet` pkg-config name (Arch uses `enet`). Override `LUA` if your system exposes a different pkg-config name. See the Wiki for additional troubleshooting tips.
