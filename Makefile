@@ -64,18 +64,8 @@ endif
 #
 
 # prefer lua5.1 when available, otherwise fall back to default lua (override with LUA=<pkg-config-name>)
-HAVE_LUA51:=$(shell pkg-config --exists lua5.1 2>/dev/null && echo yes)
-HAVE_LUA:=$(shell pkg-config --exists lua 2>/dev/null && echo yes)
-LUA?=$(if $(HAVE_LUA51),lua5.1,$(if $(HAVE_LUA),lua))
-ifeq ($(strip $(LUA)),)
-  $(error Lua pkg-config missing (tried lua5.1 and lua). Override with 'make LUA=<name>' if installed elsewhere)
-endif
-HAVE_LIBENET:=$(shell pkg-config --exists libenet 2>/dev/null && echo yes)
-HAVE_ENET:=$(shell pkg-config --exists enet 2>/dev/null && echo yes)
-ENET_PKG?=$(if $(HAVE_LIBENET),libenet,$(if $(HAVE_ENET),enet))
-ifeq ($(strip $(ENET_PKG)),)
-  $(error ENet dev package missing (pkg-config name libenet or enet). Override with 'make ENET_PKG=<name>' if installed elsewhere)
-endif
+LUA?=$(shell pkg-config --exists lua5.1 2>/dev/null && echo lua5.1 || echo lua)
+ENET_PKG?=$(shell pkg-config --exists libenet 2>/dev/null && echo libenet || echo enet)
 MACOSX=$(shell uname -a | grep -qi darwin && echo 1 || echo 0)
 
 # which version of sdl do you want to ask pkgconfig for ?
@@ -203,7 +193,6 @@ check:
 	@echo "RENDER_DISABLED = $(RENDER_DISABLED)"
 	@echo "INPUT_DISABLED = $(INPUT_DISABLED)"
 	@echo "LUA = $(LUA)"
-	@echo "ENET_PKG = $(ENET_PKG)"
 	@echo "SDL = $(SDL)"
 	@echo "SDL_ = $(SDL_)"
 	@echo
