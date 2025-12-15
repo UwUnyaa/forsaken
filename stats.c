@@ -37,6 +37,7 @@
 #include "compobjects.h"
 #include "object.h"
 #include "networking.h"
+#include "util.h"
 #include "2dtextures.h"
 #include "primary.h"
 #include "secondary.h"
