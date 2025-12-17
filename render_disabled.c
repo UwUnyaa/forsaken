@@ -32,7 +32,7 @@ void set_alpha_states( void ){}
 void set_whiteout_state( void ){}
 void render_reset_lighting_variables( void ){}
 void do_water_effect( VECTOR * pos, u_int8_t * color ){}
-void do_whiteout_effect( VECTOR * pos, COLOR * color ){}
+void do_whiteout_effect( VECTOR * pos, u_int8_t * color ){}
 void GetRealLightAmbientWorldSpace( VECTOR * Pos , float * R , float * G , float * B, float * A ){}
 void FSReleaseRenderObject(RENDEROBJECT *renderObject)
 {

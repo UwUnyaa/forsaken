@@ -93,7 +93,6 @@ static int luaprimbull_index(lua_State *L)
 {
 	PRIMARYWEAPONBULLET *bullet;
 	const char *name;
-	int *id;
 	int bullidx = *((int *) luaL_checkudata(L, 1, "PRIMARYWEAPONBULLETIDX"));
 	bullet = &PrimBulls[bullidx];
 	name = luaL_checkstring(L, 2);
@@ -151,8 +150,16 @@ static int luaprimbull_index(lua_State *L)
 	FIELDPTR(ColStart, vector);
 	FIELD(ColDist, number);
 	FIELD(ColFlag, integer);
-	FIELDPTR(ColPoint, vector); /* VERT */
-	FIELDPTR(ColPointNormal, vector); /* NORMAL */
+	if (!strcmp(name, "ColPoint"))
+	{
+		lua_pushvector(L, (VECTOR *) &bullet->ColPoint);
+		return 1;
+	}
+	if (!strcmp(name, "ColPointNormal"))
+	{
+		lua_pushvector(L, (VECTOR *) &bullet->ColPointNormal);
+		return 1;
+	}
 	FIELD(ColGroup, integer);
 	FIELD(GroupImIn, integer);
 	FIELDPTR(Mat, matrix);
@@ -191,7 +198,6 @@ static int luasecbull_index(lua_State *L)
 {
 	SECONDARYWEAPONBULLET *bullet;
 	const char *name;
-	int *id;
 	int bullidx = *((int *) luaL_checkudata(L, 1, "SECONDARYWEAPONBULLETIDX"));
 	bullet = &SecBulls[bullidx];
 	name = luaL_checkstring(L, 2);
@@ -275,8 +281,16 @@ static int luasecbull_index(lua_State *L)
 	FIELD(ColDist, number);
 	FIELD(ColFlag, integer);
 	FIELD(ColGroup, integer);
-	FIELDPTR(ColPoint, vector); /* VERT */
-	FIELDPTR(ColPointNormal, vector); /* NORMAL */
+	if (!strcmp(name, "ColPoint"))
+	{
+		lua_pushvector(L, (VECTOR *) &bullet->ColPoint);
+		return 1;
+	}
+	if (!strcmp(name, "ColPointNormal"))
+	{
+		lua_pushvector(L, (VECTOR *) &bullet->ColPointNormal);
+		return 1;
+	}
 	FIELD(GroupImIn, integer);
 	FIELD(ModelNum, integer);
 	FIELD(ModelIndex, integer);

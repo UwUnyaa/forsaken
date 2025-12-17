@@ -5,6 +5,7 @@
 #include "main.h"
 #include "file.h"
 #include "util.h"
+#include <ctype.h>
 #include "string.h"
 #include "title.h"
 

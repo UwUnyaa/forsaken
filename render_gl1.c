@@ -103,7 +103,7 @@ void render_reset_lighting_variables( void )
 	render_lighting_env_whiteout = 0;
 }
 
-void do_water_effect( VECTOR * pos, COLOR * color )
+void do_water_effect( VECTOR * pos, u_int8_t * color )
 {
 	u_int32_t r,g,b;
 	int x,y,z;
@@ -136,7 +136,7 @@ void do_water_effect( VECTOR * pos, COLOR * color )
 	color[0] = (u_int8_t) b;
 }
 
-void do_whiteout_effect( VECTOR * pos, COLOR * color )
+void do_whiteout_effect( VECTOR * pos, u_int8_t * color )
 {
 	int x,y,z,intensity;
 	float seconds;
@@ -154,8 +154,9 @@ void do_whiteout_effect( VECTOR * pos, COLOR * color )
 	);
 	intensity += render_lighting_env_whiteout;
 	if(intensity > 255) intensity = 255;
-	*color &= 0xffff;
-	*color |= ( intensity << 24 ) + ( intensity << 16 );
+	/* color is expected as BGRA bytes; set alpha and red channels to intensity */
+	color[3] = (u_int8_t) intensity; /* alpha */
+	color[2] = (u_int8_t) intensity; /* red */
 }
 
 extern XLIGHT * FirstLightVisible;

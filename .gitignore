@@ -1,4 +1,5 @@
 *.sh
+!build-arch.sh
 *.o
 projectx*
 libs*
