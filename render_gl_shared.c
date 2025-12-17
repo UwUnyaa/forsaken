@@ -34,6 +34,7 @@ GLenum render_last_gl_error = GL_NO_ERROR;
 // description of last render error
 const char * render_error_description( int e )
 {
+	(void) e;
 	CHECK_GL_ERRORS;
 	if(render_last_gl_error != GL_NO_ERROR)
 		return (const char *) gluErrorString(render_last_gl_error);
@@ -809,7 +810,7 @@ void ortho_update ( GLuint current_program )
 		m._24 = -(top+bottom)/(top-bottom) + 2.0f;
 		m._34 = -(far+near)/(far-near);
 		m._44 = 1.0f;
-		glUniformMatrix4fv( u_ortho_matrix, 1, GL_TRUE, &m );
+		glUniformMatrix4fv( u_ortho_matrix, 1, GL_TRUE, (const GLfloat *) &m );
 		CHECK_GL_ERRORS;
 		ortho_matrix_needs_update = false;
 	}
@@ -844,7 +845,7 @@ void mvp_update( GLuint current_program )
 	{
 		MatrixMultiply( &world_matrix, &view_matrix, &mvp );
 		MatrixMultiply( &mvp,          &proj_matrix, &mvp );
-		glUniformMatrix4fv( u_mvp, 1, GL_FALSE, &mvp );
+		glUniformMatrix4fv( u_mvp, 1, GL_FALSE, (const GLfloat *) &mvp );
 		CHECK_GL_ERRORS;
 		mvp_needs_update = false;
 	}
@@ -910,7 +911,7 @@ LPVERTEXBUFFER _create_buffer( int size, GLenum type, GLenum gettype, GLenum usa
 {
 	// Need to bind the new buffer in order to specify its parameters,
 	// so temporarily store the old binding in a variable.
-	GLuint oldvbo;
+	GLint oldvbo;
 	GLuint vbo;
 
 	glGenBuffers( 1, &vbo );
@@ -918,7 +919,7 @@ LPVERTEXBUFFER _create_buffer( int size, GLenum type, GLenum gettype, GLenum usa
 	glBindBuffer( type, vbo );
 	glBufferData( type, size, NULL, usage );
 	// Restore old binding
-	glBindBuffer( type, oldvbo );
+	glBindBuffer( type, (GLuint) oldvbo );
 
 	CHECK_GL_ERRORS;
 
@@ -933,7 +934,11 @@ bool draw_line_object(RENDEROBJECT *renderObject){return draw_render_object(rend
 #if GL == 1
 	#define delete_buffer(b) free( b )
 #else
-	#define delete_buffer(b) glDeleteBuffers( 1, b )
+	#define delete_buffer(b) \
+		do { \
+			GLuint __handle = GL_BUFFER_HANDLE( *(b) ); \
+			if (__handle) glDeleteBuffers( 1, &__handle ); \
+		} while (0)
 #endif
 
 void FSReleaseRenderObject(RENDEROBJECT *renderObject)

@@ -79,7 +79,14 @@ endif
 # which version of GL do you want to use ?
 GL=1
 
-$(if $(shell test "$(GL)" -ge 3 -a "$(SDL)" -lt 2 && echo fail), \
+GL_DEFINE := $(GL)
+GLES3_RENDERER :=
+ifeq ($(GL),GLES3)
+  GL_DEFINE := 3
+  GLES3_RENDERER := 1
+endif
+
+$(if $(shell test "$(GL_DEFINE)" -ge 3 -a "$(SDL)" -lt 2 && echo fail), \
      $(error "GL >= 3 only supported with SDL >= 2"))
 
 # library headers
@@ -133,7 +140,10 @@ endif
 ifeq ($(RENDER_DISABLED),1)
   CFLAGS+= -DRENDER_DISABLED
 else
-  CFLAGS+= -DGL=$(GL)
+  ifeq ($(GLES3_RENDERER),1)
+    CFLAGS+= -DGLES3_RENDERER
+  endif
+  CFLAGS+= -DGL=$(GL_DEFINE)
 endif
 CFLAGS+= -DNET_ENET_2 -DBSP -DLUA_USE_APICHECK -DTEXTURE_PNG -DSOUND_SUPPORT -DSOUND_OPENAL
 ifeq ($(DEBUG),1)

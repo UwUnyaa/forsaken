@@ -12,8 +12,22 @@
 #include "texture.h"
 #include "file.h"
 #include <stdio.h>
+#include <stdint.h>
 #include "main_sdl.h"
+#ifndef GL_GLEXT_PROTOTYPES
+#define GL_GLEXT_PROTOTYPES 1
+#endif
+#ifndef NO_SDL_GLEXT
+#define NO_SDL_GLEXT 1
+#endif
 #include "SDL_opengl.h"
+
+#if SDL_VERSION_ATLEAST(2,0,0) && !defined(MACOSX) && !defined(__IPHONEOS__)
+#include <GL/glu.h>
+#endif
+
+#define GL_BUFFER_HANDLE(ptr) ((GLuint) (uintptr_t) (ptr))
+#define GL_BUFFER_OFFSET(offset) ((const GLvoid *) (uintptr_t) (offset))
 
 extern render_info_t render_info;
 
@@ -70,6 +84,7 @@ extern MATRIX world_matrix;
 #if GL != 1
 
 void mvp_update( GLuint current_program );
+void ortho_update( GLuint current_program );
 
 extern GLuint vertex_shader;
 extern GLuint fragment_shader;

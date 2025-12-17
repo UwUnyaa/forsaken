@@ -1,4 +1,4 @@
-#if GL == 3 && !defined(GLES3_RENDERER)
+#ifdef GLES3_RENDERER
 #include "render_gl_shared.h"
 
 bool FSCreateVertexBuffer(RENDEROBJECT *renderObject, int numVertices)
@@ -282,4 +282,4 @@ bool draw_render_object( RENDEROBJECT *renderObject, int primitive_type, bool or
 	return true;
 }
 
-#endif // GL == 3 && !GLES3
+#endif // GLES3_RENDERER

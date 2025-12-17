@@ -30,3 +30,11 @@ To run this project after building, set up the `LD_LIBRARY_PATH` like in the fol
 ```bash
 LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$(pwd)/libs/lib" ./projectx
 ```
+
+## Renderer selection
+
+The Makefile exposes multiple render backends through the `GL` parameter. Besides the numeric targets (`GL=1`, `GL=2`, `GL=3`), you can now select the symbolic `GLES3` renderer. At the moment `GL=GLES3` builds the same code as the GL3 backend but establishes a dedicated compilation path so it can evolve separately. Because it is a GL3-class renderer it still requires SDL2:
+
+```bash
+make SDL=2 GL=GLES3
+```

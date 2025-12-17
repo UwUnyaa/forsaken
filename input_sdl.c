@@ -6,6 +6,12 @@
 
 JOYSTICKINFO JoystickInfo[MAX_JOYSTICKS];
 
+#if SDL_VERSION_ATLEAST(2,0,0)
+#define SDL_JOYSTICK_NAME_AT_INDEX SDL_JoystickNameForIndex
+#else
+#define SDL_JOYSTICK_NAME_AT_INDEX SDL_JoystickName
+#endif
+
 extern bool RenderModeReset( void );
 extern void SetGamePrefs( void );
 extern void FadeHoloLight(float Brightness);
@@ -539,7 +545,7 @@ bool joysticks_init(void)
 		{
 			DebugPrintf(
 				"joysticks_init: joystick (%d), '%s' failed to open\n",
-				i, SDL_JoystickName(i)
+				i, SDL_JOYSTICK_NAME_AT_INDEX(i)
 			);
 			continue;
 		}
@@ -555,7 +561,14 @@ bool joysticks_init(void)
 		// TODO
 		// JoystickInfo[i].NumBalls = SDL_JoystickNumBalls(joy);
 
-		JoystickInfo[i].Name = strdup( SDL_JoystickName(i) );
+		{
+	#if SDL_VERSION_ATLEAST(2,0,0)
+		    const char *joy_name = SDL_JoystickName(joy);
+	#else
+		    const char *joy_name = SDL_JoystickName(i);
+	#endif
+		    JoystickInfo[i].Name = strdup( joy_name ? joy_name : "Unknown Joystick" );
+		}
 
 		DebugPrintf( 
 			"joysticks_init: joystick (%d), name='%s', axises=%d, buttons=%d, hats=%d\n", 
@@ -738,7 +751,7 @@ bool handle_events( void )
 // now it's an x/y axis since it supports mouse wheel balls
 #if SDL_VERSION_ATLEAST(2,0,0)
 		case SDL_MOUSEWHEEL:
-			app_mouse_wheel( &_event );
+		app_mouse_wheel( &_event.wheel );
 			break;
 #endif
 
@@ -748,7 +761,7 @@ bool handle_events( void )
 // TODO - we should call something like app_window
 //        which then delegates to app_active in correct case
 		case SDL_WINDOWEVENT:
-			app_active( &_event );
+			app_active( &_event.window );
 			break;
 #else
 		case SDL_ACTIVEEVENT:
@@ -772,33 +785,33 @@ bool handle_events( void )
 #if SDL_VERSION_ATLEAST(2,0,0)
 		case SDL_KEYDOWN:
 		case SDL_KEYUP:
-			app_keyboard( &_event );
+			app_keyboard( &_event.key );
 			break;
 
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP:
-			app_mouse_button( &_event );
+			app_mouse_button( &_event.button );
 			break;
 
 		case SDL_MOUSEMOTION:
-			app_mouse_motion( &_event );
+			app_mouse_motion( &_event.motion );
 			break;
 
 		case SDL_JOYAXISMOTION:
-			app_joy_axis( &_event );
+			app_joy_axis( &_event.jaxis );
 			break;
 
 		case SDL_JOYBALLMOTION:
-			app_joy_ball( &_event );
+			app_joy_ball( &_event.jball );
 			break;
 
 		case SDL_JOYBUTTONDOWN:
 		case SDL_JOYBUTTONUP:
-			app_joy_button( &_event );
+			app_joy_button( &_event.jbutton );
 			break;
 
 		case SDL_JOYHATMOTION:
-			app_joy_hat( &_event );
+			app_joy_hat( &_event.jhat );
 			break;
 
 #else
