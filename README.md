@@ -16,14 +16,14 @@ The Makefile now auto-detects the `libenet` vs `enet` pkg-config name (Arch uses
 
 When working with arch, following dependencies are required to get this project up and running:
 
-* `base-devel`
-* `git`
-* `lua51`
-* `lua51-socket`
-* `pkgconf`
-* `cmake`
-* `mesa`
-* `glu`
+- `base-devel`
+- `git`
+- `lua51`
+- `lua51-socket`
+- `pkgconf`
+- `cmake`
+- `mesa`
+- `glu`
 
 To run this project after building, set up the `LD_LIBRARY_PATH` like in the following example:
 
