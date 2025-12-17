@@ -22,51 +22,47 @@
 #endif
 #include "SDL_opengl.h"
 
-#if SDL_VERSION_ATLEAST(2,0,0) && !defined(MACOSX) && !defined(__IPHONEOS__)
+#if SDL_VERSION_ATLEAST(2, 0, 0) && !defined(MACOSX) && !defined(__IPHONEOS__)
 #include <GL/glu.h>
 #endif
 
-#define GL_BUFFER_HANDLE(ptr) ((GLuint) (uintptr_t) (ptr))
-#define GL_BUFFER_OFFSET(offset) ((const GLvoid *) (uintptr_t) (offset))
+#define GL_BUFFER_HANDLE(ptr) ((GLuint)(uintptr_t)(ptr))
+#define GL_BUFFER_OFFSET(offset) ((const GLvoid *)(uintptr_t)(offset))
 
 extern render_info_t render_info;
 
 extern GLenum render_last_gl_error;
 
 // TODO invalid pointer
-#if defined(MACOSX) && SDL_VERSION_ATLEAST(2,0,0)
-#define gluErrorString(e)\
-	(e == 0x0500 ? "invalid enumerant" : \
-	(e == 0x0501 ? "invalid value" : \
-	(e == 0x0502 ? "invalid operation" : \
-	(e == 0x0503 ? "stack overflow" : \
-	(e == 0x0504 ? "stack underflow" : \
-	(e == 0x0505 ? "out of memory" : \
-	(e == 0x0506 ? "invalid framebuffer operation" : \
-	(e == 0x8031 ? "table too large" : \
-	 "unknown" \
-	))))))))
+#if defined(MACOSX) && SDL_VERSION_ATLEAST(2, 0, 0)
+#define gluErrorString(e) \
+	(e == 0x0500 ? "invalid enumerant" : (e == 0x0501 ? "invalid value" : (e == 0x0502 ? "invalid operation" : (e == 0x0503 ? "stack overflow" : (e == 0x0504 ? "stack underflow" : (e == 0x0505 ? "out of memory" : (e == 0x0506 ? "invalid framebuffer operation" : (e == 0x8031 ? "table too large" : "unknown"))))))))
 #endif
 
-const char * render_error_description( int e );
+const char *render_error_description(int e);
 
-#define CHECK_GL_ERRORS \
-	do \
-	{ \
-		GLenum e; \
-		while( ( e = glGetError() ) != GL_NO_ERROR ) \
-		{ \
-			render_last_gl_error = e; \
-			DebugPrintf( "GL error: %s (%s:%d)\n", \
-				gluErrorString(e),  __FILE__, __LINE__ ); \
-		} \
+#define CHECK_GL_ERRORS                                         \
+	do                                                          \
+	{                                                           \
+		GLenum e;                                               \
+		while ((e = glGetError()) != GL_NO_ERROR)               \
+		{                                                       \
+			render_last_gl_error = e;                           \
+			DebugPrintf("GL error: %s (%s:%d)\n",               \
+						gluErrorString(e), __FILE__, __LINE__); \
+		}                                                       \
 	} while (0)
 
-
-typedef struct { float anisotropic; } gl_caps_t;
+typedef struct
+{
+	float anisotropic;
+} gl_caps_t;
 extern gl_caps_t caps;
 
-typedef struct { GLuint id; } texture_t; // Possibly later: GLuint bump_id;
+typedef struct
+{
+	GLuint id;
+} texture_t; // Possibly later: GLuint bump_id;
 
 //
 // d3d stored the world/view matrixes
@@ -83,17 +79,17 @@ extern MATRIX world_matrix;
 
 #if GL != 1
 
-void mvp_update( GLuint current_program );
-void ortho_update( GLuint current_program );
+void mvp_update(GLuint current_program);
+void ortho_update(GLuint current_program);
 
 extern GLuint vertex_shader;
 extern GLuint fragment_shader;
 extern GLuint current_program;
 
-LPVERTEXBUFFER _create_buffer( int size, GLenum type, GLenum gettype, GLenum usage );
+LPVERTEXBUFFER _create_buffer(int size, GLenum type, GLenum gettype, GLenum usage);
 
-#define create_buffer( size, type, usage ) \
-        _create_buffer( size, type, type ## _BINDING, usage )
+#define create_buffer(size, type, usage) \
+	_create_buffer(size, type, type##_BINDING, usage)
 
 #endif // GL != 1
 

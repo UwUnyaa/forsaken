@@ -11,18 +11,18 @@ void no_glBlendColor(GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha
 
 static void bind_glBlendColor(void)
 {
-        if( !glBlendColor ) glBlendColor = SDL_GL_GetProcAddress( "glBlendColor" );
-        if( !glBlendColor ) glBlendColor = SDL_GL_GetProcAddress( "glBlendColorEXT" );
-        if( !glBlendColor )
-        {
-                glBlendColor = (PFNGLBLENDCOLOREXTPROC) no_glBlendColor;
-                DebugPrintf("bind_glBlendColor: failed to get proc address\n");
-        }
+		if( !glBlendColor ) glBlendColor = SDL_GL_GetProcAddress( "glBlendColor" );
+		if( !glBlendColor ) glBlendColor = SDL_GL_GetProcAddress( "glBlendColorEXT" );
+		if( !glBlendColor )
+		{
+				glBlendColor = (PFNGLBLENDCOLOREXTPROC) no_glBlendColor;
+				DebugPrintf("bind_glBlendColor: failed to get proc address\n");
+		}
 }
 
 static void bind_gl_funcs(void)
 {
-        bind_glBlendColor();
+		bind_glBlendColor();
 }
 
 #endif // WIN32
@@ -32,12 +32,12 @@ static void bind_gl_funcs(void)
 GLenum render_last_gl_error = GL_NO_ERROR;
 
 // description of last render error
-const char * render_error_description( int e )
+const char *render_error_description(int e)
 {
-	(void) e;
+	(void)e;
 	CHECK_GL_ERRORS;
-	if(render_last_gl_error != GL_NO_ERROR)
-		return (const char *) gluErrorString(render_last_gl_error);
+	if (render_last_gl_error != GL_NO_ERROR)
+		return (const char *)gluErrorString(render_last_gl_error);
 	else
 		return NULL;
 }
@@ -60,11 +60,11 @@ void render_mode_fill(void)
 }
 
 // unused in opengl
-bool FSBeginScene(){ return true; }
-bool FSEndScene(){ return true; }
+bool FSBeginScene() { return true; }
+bool FSEndScene() { return true; }
 
 // prototypes
-void reset_trans( void );
+void reset_trans(void);
 
 // TODO	- should get this from gl caps ?
 bool bSquareOnly = true;
@@ -75,65 +75,66 @@ bool bSquareOnly = true;
 
 static u_int8_t gamma_table[256];
 
-void build_gamma_table( double gamma )
+void build_gamma_table(double gamma)
 {
 	double k;
 	int i;
 
-	DebugPrintf("build_gamma_table( %f )\n",gamma);
+	DebugPrintf("build_gamma_table( %f )\n", gamma);
 
 #ifndef DEBUG_ON
 	if (gamma <= 0)
 		gamma = 1.0;
 #endif
 
-	k = 255.0/pow(255.0, 1.0/gamma);
-	
+	k = 255.0 / pow(255.0, 1.0 / gamma);
+
 	for (i = 0; i <= 255; i++)
 	{
-		gamma_table[i] = (u_int8_t)(k*(pow((double)i, 1.0/gamma)));
-		if( i && !gamma_table[i] )
+		gamma_table[i] = (u_int8_t)(k * (pow((double)i, 1.0 / gamma)));
+		if (i && !gamma_table[i])
 			gamma_table[i] = 1;
 	}
 }
 
-void release_texture( LPTEXTURE texture )
+void release_texture(LPTEXTURE texture)
 {
-	if(!texture) return;
-	texture_t *texdata = (texture_t *) texture;
-	glDeleteTextures( 1, &texdata->id );
+	if (!texture)
+		return;
+	texture_t *texdata = (texture_t *)texture;
+	glDeleteTextures(1, &texdata->id);
 	CHECK_GL_ERRORS;
 	free(texture);
 }
 
-static bool create_texture(LPTEXTURE *t, const char *path, u_int16_t *width, u_int16_t *height, int numMips, bool * colorkey)
+static bool create_texture(LPTEXTURE *t, const char *path, u_int16_t *width, u_int16_t *height, int numMips, bool *colorkey)
 {
 	texture_t *texdata;
 	texture_image_t image;
 
-	Change_Ext( path, image.path, ".PNG" );
-	if( ! File_Exists( (char*) image.path ) )
+	Change_Ext(path, image.path, ".PNG");
+	if (!File_Exists((char *)image.path))
 	{
-		DebugPrintf("Could not find texture file: %s\n",path);
+		DebugPrintf("Could not find texture file: %s\n", path);
 		return true;
 	}
 
-	if(load_image( &image, numMips )!=0)
+	if (load_image(&image, numMips) != 0)
 	{
 		DebugPrintf("couldn't load image\n");
 		return false;
 	}
 
 	// return values
-	*width  = (u_int16_t) image.w;
-	*height = (u_int16_t) image.h;
-	(*colorkey) = (bool) image.colorkey;
+	*width = (u_int16_t)image.w;
+	*height = (u_int16_t)image.h;
+	(*colorkey) = (bool)image.colorkey;
 
 	// employ colour key and gamma correction
 	{
 		int y, x;
 		int size = 4;
-		int pitch = size*image.w;
+		int pitch = size * image.w;
 		for (y = 0; y < image.h; y++)
 		{
 			for (x = 0; x < image.w; x++)
@@ -141,18 +142,17 @@ static bool create_texture(LPTEXTURE *t, const char *path, u_int16_t *width, u_i
 				// move to the correct offset in the data
 				// y is the row and pitch is the size of a row
 				// (x*size) is the length of each pixel data (column)
-				DWORD index = (y*pitch)+(x*size);
+				DWORD index = (y * pitch) + (x * size);
 
 				// image.data is packed in rgba
-				image.data[index]   = (char) gamma_table[ (u_int8_t) image.data[index]];	   // red
-				image.data[index+1] = (char) gamma_table[ (u_int8_t) image.data[index+1]];  // green
-				image.data[index+2] = (char) gamma_table[ (u_int8_t) image.data[index+2]];  // blue
-				image.data[index+3] = (char) gamma_table[ (u_int8_t) image.data[index+3]];  // alpha
+				image.data[index] = (char)gamma_table[(u_int8_t)image.data[index]];			// red
+				image.data[index + 1] = (char)gamma_table[(u_int8_t)image.data[index + 1]]; // green
+				image.data[index + 2] = (char)gamma_table[(u_int8_t)image.data[index + 2]]; // blue
+				image.data[index + 3] = (char)gamma_table[(u_int8_t)image.data[index + 3]]; // alpha
 
 				// colour key
-				if( image.colorkey && (image.data[index] + image.data[index+1] + image.data[index+2]) == 0 )
-					image.data[index+3] = 0; // alpha - pixel will not be rendered do to alpha value tests
-
+				if (image.colorkey && (image.data[index] + image.data[index + 1] + image.data[index + 2]) == 0)
+					image.data[index + 3] = 0; // alpha - pixel will not be rendered do to alpha value tests
 			}
 		}
 	}
@@ -160,7 +160,7 @@ static bool create_texture(LPTEXTURE *t, const char *path, u_int16_t *width, u_i
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	// create a new opengl texture
-	if( ! *t )
+	if (!*t)
 	{
 		texdata = malloc(sizeof(texture_t));
 		glGenTextures(1, &texdata->id);
@@ -171,87 +171,87 @@ static bool create_texture(LPTEXTURE *t, const char *path, u_int16_t *width, u_i
 	// updates an existing texture
 	else
 	{
-		texdata = (texture_t *) *t;
+		texdata = (texture_t *)*t;
 		glBindTexture(GL_TEXTURE_2D, texdata->id);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.w, image.h, GL_RGBA, GL_UNSIGNED_BYTE, image.data);
 		CHECK_GL_ERRORS;
 	}
 
 	// when texture area is small, bilinear filter the closest mipmap
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST );
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
 	// when texture area is large, bilinear filter the original
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// the texture wraps over at the edges (repeat)
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-	glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	// anisotropic settings
-	if(caps.anisotropic)
+	if (caps.anisotropic)
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, caps.anisotropic);
 
 #if GL > 1
-	glGenerateMipmap( GL_TEXTURE_2D );
+	glGenerateMipmap(GL_TEXTURE_2D);
 #else
 	// generates full range of mipmaps and scales to nearest power of 2
-	if(gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, image.w, image.h, GL_RGBA, GL_UNSIGNED_BYTE, image.data) != 0)
+	if (gluBuild2DMipmaps(GL_TEXTURE_2D, GL_RGBA, image.w, image.h, GL_RGBA, GL_UNSIGNED_BYTE, image.data) != 0)
 	{
 		CHECK_GL_ERRORS;
 		return false;
 	}
 #endif
 
-	if ( render_error_description(0) )
+	if (render_error_description(0))
 		return false;
 
-	*t = (LPTEXTURE) texdata;
+	*t = (LPTEXTURE)texdata;
 
-	DebugPrintf( "Created texture: file=%s, width=%d, height=%d, colorkey=%s\n", 
-		image.path, image.w, image.h, (image.colorkey ? "true" : "false") );
+	DebugPrintf("Created texture: file=%s, width=%d, height=%d, colorkey=%s\n",
+				image.path, image.w, image.h, (image.colorkey ? "true" : "false"));
 
-	destroy_image( &image );
+	destroy_image(&image);
 
 	return true;
 }
 
-bool update_texture_from_file(LPTEXTURE dstTexture, const char *fileName, u_int16_t *width, u_int16_t *height, int numMips, bool * colorkey)
+bool update_texture_from_file(LPTEXTURE dstTexture, const char *fileName, u_int16_t *width, u_int16_t *height, int numMips, bool *colorkey)
 {
 	create_texture(&dstTexture, fileName, width, height, numMips, colorkey);
 	return true;
 }
 
-bool FSCreateTexture(LPTEXTURE *texture, const char *fileName, u_int16_t *width, u_int16_t *height, int numMips, bool * colourkey)
-{	
+bool FSCreateTexture(LPTEXTURE *texture, const char *fileName, u_int16_t *width, u_int16_t *height, int numMips, bool *colourkey)
+{
 	return create_texture(texture, fileName, width, height, numMips, colourkey);
 }
 
-static void print_info( void )
+static void print_info(void)
 {
 	GLboolean b;
-	glGetBooleanv(GL_STEREO,&b);
+	glGetBooleanv(GL_STEREO, &b);
 
-	DebugPrintf( "gl vendor='%s', renderer='%s', version='%s', shader='%s', stereo='%s'\n",
-		glGetString(GL_VENDOR),
-		glGetString(GL_RENDERER),
-		glGetString(GL_VERSION),
-		glGetString(GL_SHADING_LANGUAGE_VERSION),
-		(b)?"true":"false");
+	DebugPrintf("gl vendor='%s', renderer='%s', version='%s', shader='%s', stereo='%s'\n",
+				glGetString(GL_VENDOR),
+				glGetString(GL_RENDERER),
+				glGetString(GL_VERSION),
+				glGetString(GL_SHADING_LANGUAGE_VERSION),
+				(b) ? "true" : "false");
 
 #if GL < 3
-	DebugPrintf( "extensions='%s'\n", glGetString(GL_EXTENSIONS));
+	DebugPrintf("extensions='%s'\n", glGetString(GL_EXTENSIONS));
 #else
-  #ifndef MACOSX // TODO - Bug in mac drivers
+#ifndef MACOSX // TODO - Bug in mac drivers
 	int i, max;
-	glGetIntegerv(GL_NUM_EXTENSIONS,&max);
-	DebugPrintf("render: number of extensions = %d\n",max);
-	for(i = 0; i < max; i++ )
+	glGetIntegerv(GL_NUM_EXTENSIONS, &max);
+	DebugPrintf("render: number of extensions = %d\n", max);
+	for (i = 0; i < max; i++)
 	{
-		const GLubyte* extension = glGetStringi(GL_EXTENSIONS,i);
-		if(!extension)
-			DebugPrintf("render: glGetString(GL_EXTENSIONS) returned null for extension %d\n",i);
+		const GLubyte *extension = glGetStringi(GL_EXTENSIONS, i);
+		if (!extension)
+			DebugPrintf("render: glGetString(GL_EXTENSIONS) returned null for extension %d\n", i);
 		else
-			DebugPrintf("render: Extension %d = %s\n",i,extension);
+			DebugPrintf("render: Extension %d = %s\n", i, extension);
 	}
-  #endif
+#endif
 #endif
 }
 
@@ -266,53 +266,48 @@ static void print_info( void )
 //   - different vertex layout (LVERTEX vs TLVERTEX)
 // - vertex colors are in BGRA format, not RGBA
 
-#if   GL == 2
-	#define GLSL_VERSION   "120"
-	#define GLSL_VERT_IN   "attribute"
-	#define GLSL_VERT_OUT  "varying"
-	#define GLSL_FRAG_IN   "varying"
-	#define GLSL_FRAG_OUT  ""
-#elif GL >= 3
-	#define GLSL_VERSION   "150"
-	#define GLSL_VERT_IN   "in"
-	#define GLSL_FRAG_IN   "in"
-	#define GLSL_FRAG_OUT  "out"
-	#define GLSL_VERT_OUT  "out"
+#if GL == 2
+#define GLSL_VERSION "120"
+#define GLSL_VERT_IN "attribute"
+#define GLSL_VERT_OUT "varying"
+#define GLSL_FRAG_IN "varying"
+#define GLSL_FRAG_OUT ""
+#define GLSL_PRECISION ""
+#elif defined(GLES3_RENDERER)
+#define GLSL_VERSION "300 es"
+#define GLSL_VERT_IN "in"
+#define GLSL_FRAG_IN "in"
+#define GLSL_FRAG_OUT "out"
+#define GLSL_VERT_OUT "out"
+#define GLSL_PRECISION "precision mediump float;\nprecision mediump int;\n"
+#else /* desktop GL3+ */
+#define GLSL_VERSION "150"
+#define GLSL_VERT_IN "in"
+#define GLSL_FRAG_IN "in"
+#define GLSL_FRAG_OUT "out"
+#define GLSL_VERT_OUT "out"
+#define GLSL_PRECISION ""
 #endif
 
 static const char *default_vertex_shader =
 	"#version " GLSL_VERSION "\n"
+	GLSL_PRECISION
 	"\n"
 	"uniform bool orthographic;\n"
 	"\n"
 	"uniform mat4 mvp;\n"
 	"uniform mat4 ortho_proj;\n"
-	"\n"
-	GLSL_VERT_IN " vec3 pos;\n"
-	GLSL_VERT_IN " vec4 tlpos;\n"
-	GLSL_VERT_IN " vec4 vcolor;\n"
-	GLSL_VERT_IN " vec2 vtexc;\n"
-	"\n"
-	GLSL_VERT_OUT " vec4 color;\n"
-	GLSL_VERT_OUT " vec2 texc;\n"
+	"\n" GLSL_VERT_IN " vec3 pos;\n" GLSL_VERT_IN " vec4 tlpos;\n" GLSL_VERT_IN " vec4 vcolor;\n" GLSL_VERT_IN " vec2 vtexc;\n"
+	"\n" GLSL_VERT_OUT " vec4 color;\n" GLSL_VERT_OUT " vec2 texc;\n"
 	"\n"
 	"void main(void)\n"
 	"{\n"
-	"    if (orthographic)\n"
-	"    {\n"
-// TODO - broken in GL 2
-#if 0
-	"        gl_Position = ortho_proj * tlpos;\n"
-#endif
-	"    }\n"
-	"    else\n"
-	"    {\n"
-	"        gl_Position = mvp * vec4(pos, 1.0);\n"
-	"    }\n"
+	"    vec4 world_pos = mvp * vec4(pos, 1.0);\n"
+	"    vec4 ortho_pos = ortho_proj * tlpos;\n"
+	"    gl_Position = orthographic ? ortho_pos : world_pos;\n"
 	"    color = vcolor.bgra;\n"
 	"    texc = vtexc;\n"
-	"}\n"
-;
+	"}\n";
 
 // Things a fragment shader must take into account:
 // - color-keying (discard if alpha <= 100/255; don't ask)
@@ -322,15 +317,13 @@ static const char *default_vertex_shader =
 
 static const char *default_fragment_shader =
 	"#version " GLSL_VERSION "\n"
+	GLSL_PRECISION
 	"\n"
 	"uniform bool colorkeying_enabled;\n"
 	"uniform bool texturing_enabled;\n"
 	"uniform sampler2D tex;\n"
-	"\n"
-	GLSL_FRAG_IN " vec4 color;\n"
-	GLSL_FRAG_IN " vec2 texc;\n"
-	"\n"
-	GLSL_FRAG_OUT " vec4 fcolor;\n"
+	"\n" GLSL_FRAG_IN " vec4 color;\n" GLSL_FRAG_IN " vec2 texc;\n"
+	"\n" GLSL_FRAG_OUT " vec4 fcolor;\n"
 	"\n"
 	"void main(void)\n"
 	"{\n"
@@ -356,36 +349,35 @@ static const char *default_fragment_shader =
 	"    if ( colorkeying_enabled && fcolor.a <= (100.0/255.0) )\n"
 	"        discard;\n"
 #if GL < 3
-        "    gl_FragColor = fcolor;\n"
+	"    gl_FragColor = fcolor;\n"
 #endif
-	"}\n"
-;
+	"}\n";
 
 GLuint vertex_shader = 0;
 GLuint fragment_shader = 0;
 GLuint current_program = 0;
 
-static GLuint new_shader( GLenum type, const char *src, char **log )
+static GLuint new_shader(GLenum type, const char *src, char **log)
 {
 	GLuint shader;
 	int compile_ok;
 	GLsizei log_size;
 	static char *info_log = NULL;
 
-	if ( info_log )
-		free( info_log );
+	if (info_log)
+		free(info_log);
 
-	shader = glCreateShader( type );
-	glShaderSource( shader, 1, &src, NULL );
-	glCompileShader( shader );
-	glGetShaderiv( shader, GL_COMPILE_STATUS, &compile_ok );
-	if ( compile_ok == GL_FALSE )
+	shader = glCreateShader(type);
+	glShaderSource(shader, 1, &src, NULL);
+	glCompileShader(shader);
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_ok);
+	if (compile_ok == GL_FALSE)
 	{
-		if ( log )
+		if (log)
 		{
-			glGetShaderiv( shader, GL_INFO_LOG_LENGTH, &log_size );
-			info_log = malloc( log_size );
-			glGetShaderInfoLog( shader, log_size, NULL, info_log );
+			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_size);
+			info_log = malloc(log_size);
+			glGetShaderInfoLog(shader, log_size, NULL, info_log);
 			*log = info_log;
 			return 0;
 		}
@@ -393,94 +385,94 @@ static GLuint new_shader( GLenum type, const char *src, char **log )
 
 	CHECK_GL_ERRORS;
 
-	if ( log )
+	if (log)
 		*log = NULL;
 
 	return shader;
 }
 
-static bool update_shader_program( char **log )
+static bool update_shader_program(char **log)
 {
 	int link_ok;
 	GLsizei log_size;
 	static char *info_log = NULL;
 
-	if ( info_log )
-		free( info_log );
+	if (info_log)
+		free(info_log);
 
-	if ( current_program )
+	if (current_program)
 	{
-		glUseProgram( 0 );
-		glDeleteProgram( current_program );
+		glUseProgram(0);
+		glDeleteProgram(current_program);
 	}
 
 	current_program = glCreateProgram();
-	if(!current_program)
+	if (!current_program)
 	{
 		Msg("Failed to create shader program\n");
 		return false;
 	}
 
-	glAttachShader( current_program, vertex_shader );
-	glAttachShader( current_program, fragment_shader );
-	glLinkProgram( current_program );
-	glGetProgramiv( current_program, GL_LINK_STATUS, &link_ok );
-	if ( link_ok == GL_FALSE )
+	glAttachShader(current_program, vertex_shader);
+	glAttachShader(current_program, fragment_shader);
+	glLinkProgram(current_program);
+	glGetProgramiv(current_program, GL_LINK_STATUS, &link_ok);
+	if (link_ok == GL_FALSE)
 	{
-		if ( log )
+		if (log)
 		{
-			glGetProgramiv( current_program, GL_INFO_LOG_LENGTH, &log_size );
-			info_log = malloc( log_size );
-			glGetProgramInfoLog( current_program, log_size, NULL, info_log );
+			glGetProgramiv(current_program, GL_INFO_LOG_LENGTH, &log_size);
+			info_log = malloc(log_size);
+			glGetProgramInfoLog(current_program, log_size, NULL, info_log);
 			*log = info_log;
 			return false;
 		}
 	}
 
-	glUseProgram( current_program );
+	glUseProgram(current_program);
 	CHECK_GL_ERRORS;
 
-	if ( log )
+	if (log)
 		*log = NULL;
 
 	return true;
 }
 
-static bool set_default_shaders( void )
+static bool set_default_shaders(void)
 {
 	char *info_log;
 
 	// Clean up the existing shaders if any
-	if ( vertex_shader )
+	if (vertex_shader)
 	{
-		glDeleteShader( vertex_shader );
+		glDeleteShader(vertex_shader);
 		CHECK_GL_ERRORS;
 		vertex_shader = 0;
 	}
-	if ( fragment_shader )
+	if (fragment_shader)
 	{
-		glDeleteShader( fragment_shader );
+		glDeleteShader(fragment_shader);
 		CHECK_GL_ERRORS;
 		fragment_shader = 0;
 	}
 
-	DebugPrintf("Using default vertex shader:\n\n%s\n",default_vertex_shader);
-	vertex_shader = new_shader( GL_VERTEX_SHADER, default_vertex_shader, &info_log );
-	if ( ! vertex_shader )
+	DebugPrintf("Using default vertex shader:\n\n%s\n", default_vertex_shader);
+	vertex_shader = new_shader(GL_VERTEX_SHADER, default_vertex_shader, &info_log);
+	if (!vertex_shader)
 	{
-		DebugPrintf( "Failed to compile vertex shader! Info log:\n-----\n%s\n-----\n", info_log );
+		DebugPrintf("Failed to compile vertex shader! Info log:\n-----\n%s\n-----\n", info_log);
 		return false;
 	}
-	DebugPrintf("Using default fragment shader:\n\n%s\n",default_fragment_shader);
-	fragment_shader = new_shader( GL_FRAGMENT_SHADER, default_fragment_shader, &info_log );
-	if ( ! fragment_shader )
+	DebugPrintf("Using default fragment shader:\n\n%s\n", default_fragment_shader);
+	fragment_shader = new_shader(GL_FRAGMENT_SHADER, default_fragment_shader, &info_log);
+	if (!fragment_shader)
 	{
-		DebugPrintf( "Failed to compile fragment shader! Info log:\n-----\n%s\n-----\n", info_log );
+		DebugPrintf("Failed to compile fragment shader! Info log:\n-----\n%s\n-----\n", info_log);
 		return false;
 	}
-	if ( update_shader_program( &info_log ) == false )
+	if (update_shader_program(&info_log) == false)
 	{
-		DebugPrintf( "Failed to build shader program! Info log:\n-----\n%s\n-----\n", info_log );
+		DebugPrintf("Failed to build shader program! Info log:\n-----\n%s\n-----\n", info_log);
 		return false;
 	}
 
@@ -489,18 +481,19 @@ static bool set_default_shaders( void )
 
 #endif // GL > 1
 
-static bool set_defaults( void )
+static bool set_defaults(void)
 {
 	build_gamma_table(1.0f); // 1.0f means no gamma change
 #if GL == 1
 	glShadeModel(GL_SMOOTH); // TODO - is there gouraud ?
-	glDisable(GL_LIGHTING); // we light our own verts
+	glDisable(GL_LIGHTING);	 // we light our own verts
 	// TODO invalid enumerant ?
-	//glPolygonMode(GL_BACK, GL_NONE); // don't draw back faces
-	//CHECK_GL_ERRORS;
+	// glPolygonMode(GL_BACK, GL_NONE); // don't draw back faces
+	// CHECK_GL_ERRORS;
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 #else
-	if(!set_default_shaders()) return false;
+	if (!set_default_shaders())
+		return false;
 #endif
 	reset_cull();
 	reset_trans();
@@ -509,7 +502,7 @@ static bool set_defaults( void )
 	return true;
 }
 
-static void resize_viewport( int width, int height )
+static void resize_viewport(int width, int height)
 {
 	render_viewport_t viewport;
 	viewport.X = 0;
@@ -524,59 +517,60 @@ static void resize_viewport( int width, int height )
 // capabilities of the opengl system
 gl_caps_t caps;
 
-static void detect_caps( void )
+static void detect_caps(void)
 {
 	int i, max;
 
-	//check whether anisotropic filtering extension is supported
+	// check whether anisotropic filtering extension is supported
 	caps.anisotropic = 0.0f;
 
 #if GL < 3
-	if(strstr((char*)glGetString(GL_EXTENSIONS), "GL_EXT_texture_filter_anisotropic"))
-		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &caps.anisotropic );
+	if (strstr((char *)glGetString(GL_EXTENSIONS), "GL_EXT_texture_filter_anisotropic"))
+		glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &caps.anisotropic);
 #else
-  #ifdef MACOSX // TODO - Bug in mac drivers.. hopefully everyone also gets a value of 16f
+#ifdef MACOSX // TODO - Bug in mac drivers.. hopefully everyone also gets a value of 16f
 	// OSX 10.8.2, AMD Radeon HD 6750M, GL 2.1 ATI-1.0.29, shader 1.20
 	caps.anisotropic = 16.0f;
-  #else
-	glGetIntegerv(GL_NUM_EXTENSIONS,&max);
-	for(i = 0; i < max; i++ )
+#else
+	glGetIntegerv(GL_NUM_EXTENSIONS, &max);
+	for (i = 0; i < max; i++)
 	{
-		const GLubyte* extension = glGetStringi(GL_EXTENSIONS,i);
-		if(extension && strstr(extension, "GL_EXT_texture_filter_anisotropic"))
-			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &caps.anisotropic );
+		const GLubyte *extension = glGetStringi(GL_EXTENSIONS, i);
+		if (extension && strstr(extension, "GL_EXT_texture_filter_anisotropic"))
+			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &caps.anisotropic);
 	}
-  #endif
+#endif
 #endif
 
 	DebugPrintf("render: anisotropic filtering support = %s\n",
-		caps.anisotropic?"true":"false");
+				caps.anisotropic ? "true" : "false");
 }
 
-bool render_init( render_info_t * info )
+bool render_init(render_info_t *info)
 {
 	print_info();
 	detect_caps();
-	if(!set_defaults()) return false;
+	if (!set_defaults())
+		return false;
 	resize_viewport(info->ThisMode.w, info->ThisMode.h);
-	if(info->wireframe)
+	if (info->wireframe)
 		render_mode_wireframe();
 	info->ok_to_render = true;
 	return true;
 }
 
-void render_cleanup( render_info_t * info )
+void render_cleanup(render_info_t *info)
 {
 	info->ok_to_render = false;
 	// ???
 }
 
-bool render_mode_select( render_info_t * info )
+bool render_mode_select(render_info_t *info)
 {
-	render_cleanup( info );
-	if(!sdl_init_video())
+	render_cleanup(info);
+	if (!sdl_init_video())
 		return false;
-	//if(!render_init( info ))
+	// if(!render_init( info ))
 	//	return false;
 	return true;
 }
@@ -587,69 +581,69 @@ bool render_mode_select( render_info_t * info )
 
 static bool needs_reset = false;
 
-bool render_reset( render_info_t * info )
+bool render_reset(render_info_t *info)
 {
-	if(!needs_reset)
+	if (!needs_reset)
 		return false;
-	if(!render_mode_select( info ))
+	if (!render_mode_select(info))
 		return false;
 	needs_reset = false;
 	return true;
 }
 
-void render_set_filter( bool red, bool green, bool blue )
+void render_set_filter(bool red, bool green, bool blue)
 {
-	glColorMask(red?1:0, green?1:0, blue?1:0, 1);
+	glColorMask(red ? 1 : 0, green ? 1 : 0, blue ? 1 : 0, 1);
 }
 
-bool render_flip( render_info_t * info )
+bool render_flip(render_info_t *info)
 {
 	sdl_render_present(info);
 	CHECK_GL_ERRORS;
 	return true;
 }
 
-void reset_trans( void )
+void reset_trans(void)
 {
 	glDisable(GL_BLEND);
-	glBlendFunc(GL_ONE,GL_ZERO); // src, dest
+	glBlendFunc(GL_ONE, GL_ZERO); // src, dest
 }
 
-void reset_zbuff( void )
+void reset_zbuff(void)
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glDepthMask(GL_TRUE); // depth write
 }
 
-void disable_zbuff_write( void )
+void disable_zbuff_write(void)
 {
 	glDepthMask(GL_FALSE); // depth write
 }
 
-void disable_zbuff( void )
+void disable_zbuff(void)
 {
 	glDisable(GL_DEPTH_TEST);
 }
 
-void cull_none( void )
+void cull_none(void)
 {
 	glDisable(GL_CULL_FACE);
 }
 
-void cull_cw( void )
+void cull_cw(void)
 {
 	glCullFace(GL_FRONT); // cw is the front for us
 }
 
-void reset_cull( void )
-{	
+void reset_cull(void)
+{
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 	glCullFace(GL_BACK);
 }
 
-void set_normal_states( void )
+void set_normal_states(void)
 {
 	reset_zbuff();
 	reset_trans();
@@ -657,10 +651,10 @@ void set_normal_states( void )
 
 static void set_trans_state_9()
 {
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE); // src, dest
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE); // src, dest
 }
 
-void set_alpha_states( void )
+void set_alpha_states(void)
 {
 	disable_zbuff_write();
 	glEnable(GL_BLEND);
@@ -673,13 +667,13 @@ extern float framelag;
 // 85 is my fps, 71 is the framelag multiplier, 0.05 is a suitable
 // alpha for that fps.
 
-void set_whiteout_state( void )
+void set_whiteout_state(void)
 {
 // was going really slow in gl1 for some reason so using this instead
 #if GL == 1
 	disable_zbuff_write();
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA,GL_ONE); // src, dest
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE); // src, dest
 #else
 	// higher = more white; < 1.0 makes it darker
 	float whiteness = 5.0f;
@@ -688,8 +682,8 @@ void set_whiteout_state( void )
 	float dst_a = src_a / whiteness;
 
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_CONSTANT_ALPHA,GL_ONE_MINUS_CONSTANT_COLOR); // src, dest
-	glBlendColor(dst_a, dst_a, dst_a, src_a); // src, dest
+	glBlendFunc(GL_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR); // src, dest
+	glBlendColor(dst_a, dst_a, dst_a, src_a);					 // src, dest
 #endif // GL == 1
 }
 
@@ -699,7 +693,7 @@ void set_whiteout_state( void )
 //        perhaps we can automate and remove need for rect arg ?
 
 // clears color/zbuff same time to opaque black
-bool FSClear(XYRECT * rect)
+bool FSClear(XYRECT *rect)
 {
 	int width = rect->x2 - rect->x1;
 	int height = rect->y2 - rect->y1;
@@ -725,7 +719,7 @@ bool FSClearBlack(void)
 	return true;
 }
 
-bool FSClearDepth(XYRECT * rect)
+bool FSClearDepth(XYRECT *rect)
 {
 	glClearDepth(1.0f);
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -738,13 +732,13 @@ bool FSGetViewPort(render_viewport_t *view)
 	GLfloat f[2];
 	// scalex/y are not modified here
 	// xywh
-	glGetIntegerv( GL_VIEWPORT, i );
-	view->X	= i[0];
-	view->Y	= render_info.ThisMode.h - (i[1] + i[3]);
-	view->Width	= i[2];
+	glGetIntegerv(GL_VIEWPORT, i);
+	view->X = i[0];
+	view->Y = render_info.ThisMode.h - (i[1] + i[3]);
+	view->Width = i[2];
 	view->Height = i[3];
 	// near,far
-	glGetFloatv( GL_DEPTH_RANGE, f );
+	glGetFloatv(GL_DEPTH_RANGE, f);
 	view->MinZ = f[0];
 	view->MaxZ = f[1];
 	return true;
@@ -761,18 +755,18 @@ bool FSSetViewPort(render_viewport_t *view)
 	// render_viewport_t x/y starts top/left
 	// but glViewport starts from bottom/left
 	int bottom = render_info.ThisMode.h - (view->Y + view->Height);
-	glViewport(	view->X, bottom, (GLint) view->Width, (GLint) view->Height	);
+	glViewport(view->X, bottom, (GLint)view->Width, (GLint)view->Height);
 	// sets the min/max depth values to render
 	// default is max 1.0f and min 0.0f
 	// this is here for compatibility with d3d9
-	glDepthRange(view->MinZ,view->MaxZ);
+	glDepthRange(view->MinZ, view->MaxZ);
 	// i want to know if this is ever changed
 	// as most likely we don't need this info in render_viewport_t
-	if(view->MaxZ!=1.0f || view->MinZ!=0.0f)
+	if (view->MaxZ != 1.0f || view->MinZ != 0.0f)
 	{
 		DebugPrintf("-------------------------------\n");
 		DebugPrintf("max/min z used: max=%d min=%d\n",
-			view->MaxZ, view->MinZ);
+					view->MaxZ, view->MinZ);
 		DebugPrintf("-------------------------------\n");
 	}
 	// ScaleX|Y are not even part of the d3d9 struct anymore
@@ -786,13 +780,13 @@ bool FSSetViewPort(render_viewport_t *view)
 }
 
 #if GL > 1
-void ortho_update ( GLuint current_program )
+void ortho_update(GLuint current_program)
 {
 	MATRIX m;
 	float left, right, bottom, top, near, far;
 	GLuint u_ortho_matrix;
 
-	if ( ortho_matrix_needs_update && ( u_ortho_matrix = glGetUniformLocation( current_program, "ortho_proj" ) ) >= 0 )
+	if (ortho_matrix_needs_update && (u_ortho_matrix = glGetUniformLocation(current_program, "ortho_proj")) >= 0)
 	{
 		left = 0.0f;
 		right = render_info.ThisMode.w;
@@ -801,16 +795,16 @@ void ortho_update ( GLuint current_program )
 		near = -1.0f;
 		far = 1.0f;
 		memset(&m, 0, sizeof(MATRIX));
-		m._11 = 2.0f/(right-left);
+		m._11 = 2.0f / (right - left);
 		// vertical flip ...
-		m._22 = (2.0f/(top-bottom)) * -1.0f;
-		m._33 = -2.0f/(far-near);
-		m._14 = -(right+left)/(right-left);
+		m._22 = (2.0f / (top - bottom)) * -1.0f;
+		m._33 = -2.0f / (far - near);
+		m._14 = -(right + left) / (right - left);
 		// ... and translate to make top left the origin
-		m._24 = -(top+bottom)/(top-bottom) + 2.0f;
-		m._34 = -(far+near)/(far-near);
+		m._24 = -(top + bottom) / (top - bottom) + 2.0f;
+		m._34 = -(far + near) / (far - near);
 		m._44 = 1.0f;
-		glUniformMatrix4fv( u_ortho_matrix, 1, GL_TRUE, (const GLfloat *) &m );
+		glUniformMatrix4fv(u_ortho_matrix, 1, GL_TRUE, (const GLfloat *)&m);
 		CHECK_GL_ERRORS;
 		ortho_matrix_needs_update = false;
 	}
@@ -836,60 +830,60 @@ bool mvp_needs_update;
 // See also: http://en.wikipedia.org/wiki/Transpose#Properties
 
 #if GL > 1
-void mvp_update( GLuint current_program )
+void mvp_update(GLuint current_program)
 {
 	MATRIX mvp;
 	GLuint u_mvp;
 
-	if ( mvp_needs_update && ( u_mvp = glGetUniformLocation( current_program, "mvp" ) ) >= 0 )
+	if (mvp_needs_update && (u_mvp = glGetUniformLocation(current_program, "mvp")) >= 0)
 	{
-		MatrixMultiply( &world_matrix, &view_matrix, &mvp );
-		MatrixMultiply( &mvp,          &proj_matrix, &mvp );
-		glUniformMatrix4fv( u_mvp, 1, GL_FALSE, (const GLfloat *) &mvp );
+		MatrixMultiply(&world_matrix, &view_matrix, &mvp);
+		MatrixMultiply(&mvp, &proj_matrix, &mvp);
+		glUniformMatrix4fv(u_mvp, 1, GL_FALSE, (const GLfloat *)&mvp);
 		CHECK_GL_ERRORS;
 		mvp_needs_update = false;
 	}
 }
 #endif
 
-static void reset_modelview( void )
+static void reset_modelview(void)
 {
 #if GL == 1
 	MATRIX mv_matrix;
 	glMatrixMode(GL_MODELVIEW);
-	MatrixMultiply( &world_matrix, &view_matrix, &mv_matrix );
-	glLoadMatrixf((GLfloat*)&mv_matrix);
+	MatrixMultiply(&world_matrix, &view_matrix, &mv_matrix);
+	glLoadMatrixf((GLfloat *)&mv_matrix);
 #else
 	mvp_needs_update = true;
 #endif
 }
 
-bool FSSetView( RENDERMATRIX *matrix )
+bool FSSetView(RENDERMATRIX *matrix)
 {
-	memmove(&view_matrix,&matrix->m,sizeof(view_matrix));//memcpy
+	memmove(&view_matrix, &matrix->m, sizeof(view_matrix)); // memcpy
 	reset_modelview();
 	return true;
 }
 
-bool FSSetWorld( RENDERMATRIX *matrix )
-{	
-	memmove(&world_matrix,&matrix->m,sizeof(world_matrix));//memcpy
+bool FSSetWorld(RENDERMATRIX *matrix)
+{
+	memmove(&world_matrix, &matrix->m, sizeof(world_matrix)); // memcpy
 	reset_modelview();
 	return true;
 }
 
 bool FSGetWorld(RENDERMATRIX *matrix)
 {
-	memmove(&matrix->m,&world_matrix,sizeof(matrix->m));//memcpy
+	memmove(&matrix->m, &world_matrix, sizeof(matrix->m)); // memcpy
 	return true;
 }
 
-bool FSSetProjection( RENDERMATRIX *matrix )
+bool FSSetProjection(RENDERMATRIX *matrix)
 {
-	memmove(&proj_matrix,&matrix->m,sizeof(proj_matrix));//memcpy
+	memmove(&proj_matrix, &matrix->m, sizeof(proj_matrix)); // memcpy
 #if GL == 1
 	glMatrixMode(GL_PROJECTION);
-	glLoadMatrixf((GLfloat*)&matrix->m);
+	glLoadMatrixf((GLfloat *)&matrix->m);
 #else
 	// These matrices are eventually combined (multiplied together) at
 	// render time. We update them locally and mark the combined
@@ -907,38 +901,40 @@ bool FSSetProjection( RENDERMATRIX *matrix )
 //
 
 #if GL > 1
-LPVERTEXBUFFER _create_buffer( int size, GLenum type, GLenum gettype, GLenum usage )
+LPVERTEXBUFFER _create_buffer(int size, GLenum type, GLenum gettype, GLenum usage)
 {
 	// Need to bind the new buffer in order to specify its parameters,
 	// so temporarily store the old binding in a variable.
 	GLint oldvbo;
 	GLuint vbo;
 
-	glGenBuffers( 1, &vbo );
-	glGetIntegerv( gettype, &oldvbo );
-	glBindBuffer( type, vbo );
-	glBufferData( type, size, NULL, usage );
+	glGenBuffers(1, &vbo);
+	glGetIntegerv(gettype, &oldvbo);
+	glBindBuffer(type, vbo);
+	glBufferData(type, size, NULL, usage);
 	// Restore old binding
-	glBindBuffer( type, (GLuint) oldvbo );
+	glBindBuffer(type, (GLuint)oldvbo);
 
 	CHECK_GL_ERRORS;
 
-	return (LPVERTEXBUFFER) vbo;
+	return (LPVERTEXBUFFER)vbo;
 }
 #endif
 
-bool draw_object(RENDEROBJECT *renderObject){return draw_render_object(renderObject,GL_TRIANGLES,false);}
-bool draw_2d_object(RENDEROBJECT *renderObject){return draw_render_object(renderObject,GL_TRIANGLES,true);}
-bool draw_line_object(RENDEROBJECT *renderObject){return draw_render_object(renderObject,GL_LINES,false);}
+bool draw_object(RENDEROBJECT *renderObject) { return draw_render_object(renderObject, GL_TRIANGLES, false); }
+bool draw_2d_object(RENDEROBJECT *renderObject) { return draw_render_object(renderObject, GL_TRIANGLES, true); }
+bool draw_line_object(RENDEROBJECT *renderObject) { return draw_render_object(renderObject, GL_LINES, false); }
 
 #if GL == 1
-	#define delete_buffer(b) free( b )
+#define delete_buffer(b) free(b)
 #else
-	#define delete_buffer(b) \
-		do { \
-			GLuint __handle = GL_BUFFER_HANDLE( *(b) ); \
-			if (__handle) glDeleteBuffers( 1, &__handle ); \
-		} while (0)
+#define delete_buffer(b)                          \
+	do                                            \
+	{                                             \
+		GLuint __handle = GL_BUFFER_HANDLE(*(b)); \
+		if (__handle)                             \
+			glDeleteBuffers(1, &__handle);        \
+	} while (0)
 #endif
 
 void FSReleaseRenderObject(RENDEROBJECT *renderObject)
@@ -946,17 +942,17 @@ void FSReleaseRenderObject(RENDEROBJECT *renderObject)
 	int i;
 	if (renderObject->lpVertexBuffer)
 	{
-		delete_buffer( &renderObject->lpVertexBuffer );
+		delete_buffer(&renderObject->lpVertexBuffer);
 		renderObject->lpVertexBuffer = NULL;
 	}
 	if (renderObject->lpNormalBuffer)
 	{
-		delete_buffer( &renderObject->lpNormalBuffer );
+		delete_buffer(&renderObject->lpNormalBuffer);
 		renderObject->lpNormalBuffer = NULL;
 	}
 	if (renderObject->lpIndexBuffer)
 	{
-		delete_buffer( &renderObject->lpIndexBuffer );
+		delete_buffer(&renderObject->lpIndexBuffer);
 		renderObject->lpIndexBuffer = NULL;
 	}
 	for (i = 0; i < renderObject->numTextureGroups; i++)
